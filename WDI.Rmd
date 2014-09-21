@@ -208,9 +208,9 @@ mbz=mbz[mbz$Continent=="Africa",]
 # mbz$EndDate=""
 # mbz$Report=""
 
-write.csv(mbz,"MBZ.csv")
-saveRDS(mbz,"mbz")
-} else mbz=readRDS(file = "mbz")
+write.csv(mbz,"CSVs/MBZ.csv")
+saveRDS(mbz,"objects/mbz")
+} else mbz=readRDS(file = "objects/mbz")
 
 
 
@@ -253,10 +253,10 @@ colnames(cepf)=xc("NGO StartDate EndDate USD Title Details Report")
 # cepf$SpeciesClass=""
 cepf$Fund="CEPF"
 
-write.csv(t(s),"cepf.csv")
+write.csv(t(s),"CSVs/cepf.csv")
 library(plyr)
-saveRDS(cepf,"cepf")
-} else cepf=readRDS(file = "cepf")
+saveRDS(cepf,"objects/cepf")
+} else cepf=readRDS(file = "objects/cepf")
 
 ```
 
@@ -274,8 +274,8 @@ gef=read.csv("gef.csv",stringsAsFactors=F)
 
 
 #probably could use class=odd or even but I just downloaded the table as csv. but note none of the recipients seem to be small ngos. 
-saveRDS(gef,"gef")
-} else gef=readRDS(file = "gef")
+saveRDS(gef,"objects/gef")
+} else gef=readRDS(file = "objects/gef")
 
 
 
@@ -331,9 +331,9 @@ if(length(main)>0)content[[link4]]=data.frame(Title=title,phase,More=main,Detail
 
 ppi=data.frame(do.call(rbind.fill,content))
 ppi$Fund="ppi"
-write.csv(ppi,"ppi.csv")
-saveRDS(ppi,"ppi")
-} else ppi=readRDS(file = "ppi")
+write.csv(ppi,"CSVs/ppi.csv")
+saveRDS(ppi,"objects/ppi")
+} else ppi=readRDS(file = "objects/ppi")
 
 ```
 
@@ -376,9 +376,9 @@ content[[proj]]=c(
 darwin=t(data.frame(content))
 darwin=data.frame(darwin)
 colnames(darwin)=xc("ID Ref StartDate Country Pounds Details URL More")
-write.csv(darwin,"darwin.csv")
-saveRDS(darwin,"darwin")
-} else darwin=readRDS(file = "darwin")
+write.csv(darwin,"CSVs/darwin.csv")
+saveRDS(darwin,"objects/darwin")
+} else darwin=readRDS(file = "objects/darwin")
 
 
 ```
@@ -411,9 +411,9 @@ content[[path]]$Fund="Monaco"
 }
 }
 monaco=do.call(rbind.fill,content)
-write.csv(monaco,"monaco.csv")
-saveRDS(monaco,"monaco")
-} else monaco=readRDS(file = "monaco")
+write.csv(monaco,"CSVs/monaco.csv")
+saveRDS(monaco,"objects/monaco")
+} else monaco=readRDS(file = "objects/monaco")
 
 
 ```

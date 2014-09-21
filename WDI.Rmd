@@ -207,7 +207,8 @@ mbz=mbz[mbz$Continent=="Africa",]
 # mbz$NGO=""
 # mbz$EndDate=""
 # mbz$Report=""
-
+library(dplyr)
+mbz=select(mbz,-Continent)
 write.csv(mbz,"CSVs/MBZ.csv")
 saveRDS(mbz,"objects/mbz")
 } else mbz=readRDS(file = "objects/mbz")
@@ -230,31 +231,38 @@ link="file:///media/steve/ssd/steve@promente.net/Projects/IUCN/projectsAndFundsD
 got=getURL(link)
 
 
-kbbTree <- htmlTreeParse(got, asText = TRUE)
-kbbRoot <- xmlRoot(kbbTree)
-print(summary(kbbRoot))
-kbbdiv <- kbbRoot[["body"]][["div"]]
+# kbbTree <- htmlTreeParse(got, asText = TRUE)
+# kbbRoot <- xmlRoot(kbbTree)
+# print(summary(kbbRoot))
+# kbbdiv <- kbbRoot[["body"]][["div"]]
 
 pargot=htmlTreeParse(got, useInternalNodes = TRUE)
 
 root=xmlRoot(pargot)
-rows=xpathSApply(pargot,"//div[@class='filterData']")#,xmlValue)
+NGO=xpathSApply(pargot,"//div[@class='filterData']//div[@class='grantee']",xmlValue)
+StartDate=xpathSApply(pargot,"//div[@class='filterData']//div[@class='startDate']",xmlValue)
+EndDate=xpathSApply(pargot,"//div[@class='filterData']//div[@class='endDate']",xmlValue)
+USD=xpathSApply(pargot,"//div[@class='filterData']//div[@class='amount']",xmlValue)
+Title=xpathSApply(pargot,"//div[@class='filterData']//div[@class='title']",xmlValue)
+Details=xpathSApply(pargot,"//div[@class='filterData']//div[@class='description']",xmlValue)
+URL=xpathSApply(pargot,"//div[@class='filterData']//div[@class='documents']",xmlValue)
 
-new=list()
-for(i in 1:length((rows))){
-  for(j in 1:length(names(rows[[i]]))) if(j==1) new[[i]]=rows[[i]][[j]] else new[[i]]=c(new[[i]],rows[[i]][[j]])
-}
-
-s=sapply(new,function(x) sapply(x,function(y)clean(as(y,"character"))))
-cepf=data.frame(t(s))[,c(2,4,6,8,10,12,14)]
-colnames(cepf)=xc("NGO StartDate EndDate USD Title Details Report")
+# new=list()
+# for(i in 1:length((rows))){
+#   for(j in 1:length(names(rows[[i]]))) if(j==1) new[[i]]=rows[[i]][[j]] else new[[i]]=c(new[[i]],rows[[i]][[j]])
+# }
+# 
+# s=sapply(new,function(x) sapply(x,function(y)clean(as(y,"character"))))
+# cepf=data.frame(t(s))[,c(2,4,6,8,10,12,14)]
+# colnames(cepf)=xc("NGO StartDate EndDate USD Title Details Report")
 # cepf$Continent=""
 # cepf$Country=""
 # cepf$SpeciesClass=""
+cepf=data.frame(NGO,StartDate,EndDate,USD,Title,Details,URL)
+
 cepf$Fund="CEPF"
 
-write.csv(t(s),"CSVs/cepf.csv")
-library(plyr)
+write.csv(cepf,"CSVs/cepf.csv")
 saveRDS(cepf,"objects/cepf")
 } else cepf=readRDS(file = "objects/cepf")
 
@@ -375,7 +383,8 @@ content[[proj]]=c(
 }
 darwin=t(data.frame(content))
 darwin=data.frame(darwin)
-colnames(darwin)=xc("ID Ref StartDate Country Pounds Details URL More")
+darwin$Fund="Darwin"
+colnames(darwin)=xc("ID Ref StartDate Country Pounds Details URL More Darwin")
 write.csv(darwin,"CSVs/darwin.csv")
 saveRDS(darwin,"objects/darwin")
 } else darwin=readRDS(file = "objects/darwin")
@@ -424,14 +433,14 @@ saveRDS(monaco,"objects/monaco")
 ```{r joining}
 library(plyr)
 all=rbind.fill(cepf,mbz,ppi,monaco,darwin)
-all$Country=as.character(r$Country)
-target=with(all,paste(Country,Details,More,Title,NGO,Report))
+all$Country=as.character(all$Country)
+target=with(all,paste(Country,Details,More,Title,NGO))
 all$CentralWestAfrica=sapply(target,function(x)sum(sapply(CWAfNames,function(y){
 grepl(y,x)
 }))>0
 )
 
 
-write.csv(all,"all.csv")
+write.csv(all,"CSVs/all.csv")
 ```
 

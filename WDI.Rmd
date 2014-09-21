@@ -18,17 +18,31 @@ library(XML)
 clean=function(x)gsub("<[^>]*>", "",gsub("\n","",x))
 xc=function(stri,sepp=" ") (strsplit(stri, sepp)[[1]]) 
 
+html2txt <- function(str) {
+      xpathApply(htmlParse(str, asText=TRUE),
+                 "//body//text()", 
+                 xmlValue)[[1]] 
+}
+
 usecache=T
+if(usecache){
+  mbz=readRDS(file = "objects/mbz")
+  ppi=readRDS(file = "objects/ppi")
+  monaco=readRDS(file = "objects/monaco")
+  cepf=readRDS(file = "objects/cepf")
 
-all=read.csv("/home/steve/steve@promente.net/Methods/R-methods/mapAndCountryDataStuff/ISO-3166-Countries-with-Regional-Codes/all/all.csv", stringsAsFactors=F)
+}
 
-WAfCodes=all[,2][all[,7]=="11"]
-CAfCodes=all[,2][all[,7]=="17"]
-WAfNames=all[,1][all[,7]=="11"]
-CAfNames=all[,1][all[,7]=="17"]
+allcountries=read.csv("/home/steve/steve@promente.net/Methods/R-methods/mapAndCountryDataStuff/ISO-3166-Countries-with-Regional-Codes/all/all.csv", stringsAsFactors=F)
+
+WAfCodes=allcountries[,2][allcountries[,7]=="11"]
+CAfCodes=allcountries[,2][allcountries[,7]=="17"]
+WAfNames=allcountries[,1][allcountries[,7]=="11"]
+CAfNames=allcountries[,1][allcountries[,7]=="17"]
 
 CWAfCodes=na.omit(c(WAfCodes,CAfCodes))
 CWAfNames=na.omit(c(WAfNames,CAfNames))
+CWAfNames=na.omit(c("Democratic Republic of Congo",CWAfNames))
 
 
 if(!usecache){
@@ -202,6 +216,8 @@ mbz=content
 
 mbz$Fund="MBZ"
 mbz=mbz[mbz$Continent=="Africa",]
+mbz$USD=gsub("\\$","",mbz$USD)
+mbz$USD=gsub(",","",mbz$USD)
 
 
 # mbz$NGO=""
@@ -384,7 +400,8 @@ content[[proj]]=c(
 darwin=t(data.frame(content))
 darwin=data.frame(darwin)
 darwin$Fund="Darwin"
-colnames(darwin)=xc("ID Ref StartDate Country Pounds Details URL More Darwin")
+colnames(darwin)=xc("Ref ID StartDate Country GBP Title URL Details Fund")
+darwin$USD=as.numeric(gsub(",","",darwin$GBP))*1.63
 write.csv(darwin,"CSVs/darwin.csv")
 saveRDS(darwin,"objects/darwin")
 } else darwin=readRDS(file = "objects/darwin")
@@ -429,11 +446,51 @@ saveRDS(monaco,"objects/monaco")
 
 
 
+```{r whitley}
+if(!usecache){
+
+linko="http://whitleyaward.org/winners/"
+content=list()
+got=getURL(linko)
+xpargot=htmlParse(got)
+
+rows=xpathSApply(xpargot,"//tr[@class='winner-row']")
+NGO=xpathSApply(xpargot,"//tr[@class='winner-row']//td[@class='po']",xmlValue)
+Country=gsub("\t","",xpathSApply(xpargot,"//tr[@class='winner-row']//td[@class='pc']",xmlValue))
+Type=xpathSApply(xpargot,"//tr[@class='winner-row']//td[@class='pt']",xmlValue)
+StartDate=xpathSApply(xpargot,"//tr[@class='winner-row']//td[@class='py']",xmlValue)
+URL=xpathSApply(xpargot,"//tr[@class='winner-row']//td[@class='po']//a//@href")
+
+
+whitley=data.frame(NGO,Type,Country,StartDate,URL)
+yes=sapply(whitley$Country,function(x){
+  any(grepl(x,CWAfNames))
+})
+
+for(link in whitley$URL[yes]){
+  got=getURL(link)
+xpargot=htmlParse(got)
+whitley$Title[whitley$URL==link]=xpathSApply(xpargot,"//div//*[contains(concat(' ', @class, ' '), ' standfirst ')]",xmlValue)
+whitley$Details[whitley$URL==link]=xpathSApply(xpargot,"//div//*[contains(concat(' ', @class, ' '), ' hentry ')]",xmlValue)
+}
+
+
+whitley$Fund="whitley"
+write.csv(whitley,"CSVs/whitley.csv")
+saveRDS(whitley,"objects/whitley")
+} else whitley=readRDS(file = "objects/whitley")
+
+
+```
+
+
+
 
 ```{r joining}
 library(plyr)
-all=rbind.fill(cepf,mbz,ppi,monaco,darwin)
+all=rbind.fill(cepf,mbz,ppi,monaco,darwin,whitley)
 all$Country=as.character(all$Country)
+all$USD=as.numeric(all$USD)
 target=with(all,paste(Country,Details,More,Title,NGO))
 all$CentralWestAfrica=sapply(target,function(x)sum(sapply(CWAfNames,function(y){
 grepl(y,x)
@@ -442,5 +499,11 @@ grepl(y,x)
 
 
 write.csv(all,"CSVs/all.csv")
+```
+
+```{r scales}
+library(scales)
+
+ggplot(all,aes(USD,group=Fund,colour=Fund))+geom_density()+scale_x_log10()
 ```
 
